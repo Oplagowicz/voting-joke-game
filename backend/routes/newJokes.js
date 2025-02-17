@@ -47,4 +47,61 @@ jokesRouter.get("/", async (req, res) => {
   }
 });
 
+
+
+jokesRouter.post("/:id/vote", async (req, res) => {
+  try {
+    const { selectedEmoji } = req.body;
+    if (!allowedEmojis.includes(selectedEmoji)) {
+      return res.status(400).json({ error: "Invalid emoji for voting" });
+    }
+
+    const jokeToUpdate = await JokeModel.findById(req.params.id);
+    if (!jokeToUpdate) return res.status(404).json({ message: "Joke not found" });
+
+    const existingVote = jokeToUpdate.votes.find((vote) => vote.label === selectedEmoji);
+    if (existingVote) {
+      existingVote.value += 1;
+    } else {
+      jokeToUpdate.votes.push({ label: selectedEmoji, value: 1 });
+    }
+
+    await jokeToUpdate.save();
+    res.json(jokeToUpdate);
+  } catch (error) {
+    res.status(500).json({ error: "Error while processing vote request" });
+  }
+});
+
+jokesRouter.delete("/:id", async (req, res) => {
+  try {
+    const deletedJoke = await JokeModel.findByIdAndDelete(req.params.id);
+    if (!deletedJoke) return res.status(404).json({ message: "Joke not found" });
+    res.json({ message: "Joke deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete the joke" });
+  }
+});
+
+jokesRouter.put("/:id", async (req, res) => {
+  try {
+    const { question, answer } = req.body;
+    if (!question || !answer) {
+      return res.status(400).json({ error: "Both question and answer are required" });
+    }
+
+    const updatedJoke = await JokeModel.findByIdAndUpdate(
+      req.params.id,
+      { question, answer },
+      { new: true }
+    );
+
+    if (!updatedJoke) return res.status(404).json({ message: "Joke not found" });
+    res.json(updatedJoke);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update the joke" });
+  }
+});
+
+
 export default jokesRouter;
