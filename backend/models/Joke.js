@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const jokeSchema = new mongoose.Schema({
     question: { type: String, required: true},
@@ -7,11 +7,12 @@ const jokeSchema = new mongoose.Schema({
         {
             value: {type: Number, default: 0},
             label: {type: String, required: true},
+            _id: false
         },
     ],
     availableVotes: {type: [String], default: ["😂", "👍", "❤️"]},
 
-}, { timestamps: true });
+});
 
-const Joke = mongoose.model("Joke", jokeSchema);
-module.exports = Joke;
+const JokeModel = mongoose.model("Joke", jokeSchema);
+export default JokeModel;

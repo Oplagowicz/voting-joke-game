@@ -1,9 +1,10 @@
-const express = require("express");
-const cors = require("cors");
-const connectDB = require("./config/db.js");
-const Joke = require("./models/Joke.js")
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import connectDB from "./config/db.js";
+import jokesRouter from "./routes/newJokes.js";
 
-require("dotenv").config();
+dotenv.config();
 
 const app = express();
 app.use(cors());
@@ -11,31 +12,8 @@ app.use(express.json());
 
 connectDB();
 
-const addTestJoke = async () => {
-    try {
-      const jokeExists = await Joke.findOne({ question: "Why did the developer go broke?" });
-      if (!jokeExists) {
-        const joke = new Joke({
-          question: "Why did the developer go broke?",
-          answer: "Because he used up all his cache!",
-          votes: [
-            { value: 10, label: "😂" },
-            { value: 5, label: "👍" },
-            { value: 3, label: "❤️" }
-          ]
-        });
-        await joke.save();
-        console.log("Test joke added to MongoDB!");
-      } else {
-        console.log("Test joke already exists in database.");
-      }
-    } catch (error) {
-      console.error("!Failed to add test joke:", error.message);
-    }
-  };
-  
-  connectDB().then(addTestJoke);
-
+app.use("/api/joke", jokesRouter);
+app.use("/api/joke1", jokesRouter);
 
 app.get("/", (req, res) => {
   res.send("API is running...");
