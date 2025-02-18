@@ -8,44 +8,81 @@ const jokesRouter = express.Router();
 const allowedEmojis = ["😂", "👍", "❤️"];
 
 
-const fetchJokeFromAPI = async () => {
+jokesRouter.get("/:id?", async (req, res) => {
   try {
-    const response = await fetch("https://teehee.dev/api/joke");
-    const jokeData = await response.json();
-    
-    if (jokeData && jokeData.question && jokeData.answer) {
-      const newJoke = new JokeModel({
-        question: jokeData.question,
-        answer: jokeData.answer,
-        votes: allowedEmojis.map((emoji) => ({ label: emoji, value: 0 })), 
-        availableVotes: allowedEmojis,
-      });
-      await newJoke.save();
-      return newJoke;
+    const { id } = req.params;
+    let result = null;
+
+    if (id) {
+      result = await JokeModel.findById(id);
+      if (!result) {
+        return res.status(404).json({ message: "Joke not found" });
+      }
+    } else {
+
+      if (!global.usedJokesIds) {
+        global.usedJokesIds = [];
+      }
+
+      const storedJokes = await JokeModel.find();
+
+      if (storedJokes.length === 0) {
+        console.log("No jokes in database, fetching a new one...");
+        
+        const response = await fetch("https://teehee.dev/api/joke");
+        const jokeData = await response.json();
+
+        if (jokeData && jokeData.question && jokeData.answer) {
+          result = new JokeModel({
+            question: jokeData.question,
+            answer: jokeData.answer,
+            votes: allowedEmojis.map((emoji) => ({ label: emoji, value: 0 })),
+          });
+
+          await result.save();
+        } else {
+          return res.status(404).json({ message: "No jokes found from API" });
+        }
+      } else {
+        let availableJokes = storedJokes.filter(joke => !global.usedJokesIds.includes(joke._id.toString()));
+
+        if (availableJokes.length === 0) {
+          console.log("All jokes have been used in this session. Fetching a new one...");
+          
+          global.usedJokesIds = [];
+
+          const response = await fetch("https://teehee.dev/api/joke");
+          const jokeData = await response.json();
+
+          if (jokeData && jokeData.question && jokeData.answer) {
+            result = new JokeModel({
+              question: jokeData.question,
+              answer: jokeData.answer,
+              votes: allowedEmojis.map((emoji) => ({ label: emoji, value: 0 })),
+            });
+
+            await result.save();
+          } else {
+            return res.status(404).json({ message: "No new jokes available from API" });
+          }
+        } else {
+          result = availableJokes[Math.floor(Math.random() * availableJokes.length)];
+        }
+      }
     }
-  } catch (error) {
-    console.error("!!Error fetching joke from TeeHee API:", error.message);
-  }
-  return null;
-};
 
-jokesRouter.get("/", async (req, res) => {
-  try {
-    const storedJokes = await JokeModel.find().lean();
-    
-    if (storedJokes.length > 0) {
-      const randomJoke = storedJokes[Math.floor(Math.random() * storedJokes.length)];
-      return res.json(randomJoke);
+    if (result && !global.usedJokesIds.includes(result._id.toString())) {
+      global.usedJokesIds.push(result._id.toString());
     }
 
-    const externalJoke = await fetchJokeFromAPI();
-    if (externalJoke) return res.json(externalJoke);
-
-    res.status(404).json({ message: "!!No jokes found and external API unavailable" });
+    res.json(result);
   } catch (error) {
-    res.status(500).json({ error: "!!Server encountered an issue while retrieving jokes" });
+    res.status(500).json({ error: "Error fetching joke" });
   }
 });
+
+
+
 
 
 

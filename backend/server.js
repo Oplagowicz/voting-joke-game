@@ -13,7 +13,6 @@ app.use(express.json());
 connectDB();
 
 app.use("/api/joke", jokesRouter);
-app.use("/api/joke1", jokesRouter);
 
 app.get("/", (req, res) => {
   res.send("API is running...");

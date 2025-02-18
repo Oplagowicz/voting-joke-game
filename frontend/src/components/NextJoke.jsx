@@ -1,7 +1,11 @@
 import React from "react";
 
-function NextJoke() {
-    return console.log ('Work')
+function NextJoke({ fetchJoke }) {
+    return (
+        <button onClick={() => fetchJoke()}>
+            Next Joke
+        </button>
+    );
 }
 
 export default NextJoke;
