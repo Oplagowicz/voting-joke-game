@@ -7,6 +7,30 @@ const jokesRouter = express.Router();
 
 const allowedEmojis = ["😂", "👍", "❤️"];
 
+const generateJoke = async () => {
+  try {
+    const response = await fetch("https://teehee.dev/api/joke");
+    const jokeData = await response.json();
+
+    if (jokeData && jokeData.question && jokeData.answer) {
+      const newJoke = new JokeModel({
+        question: jokeData.question,
+        answer: jokeData.answer,
+        votes: allowedEmojis.map((emoji) => ({ label: emoji, value: 0 })),
+      });
+
+      await newJoke.save();
+      return newJoke;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching joke from API:", error);
+    return null;
+  }
+};
+
+
 
 jokesRouter.get("/:id?", async (req, res) => {
   try {
@@ -19,7 +43,6 @@ jokesRouter.get("/:id?", async (req, res) => {
         return res.status(404).json({ message: "Joke not found" });
       }
     } else {
-
       if (!global.usedJokesIds) {
         global.usedJokesIds = [];
       }
@@ -28,19 +51,8 @@ jokesRouter.get("/:id?", async (req, res) => {
 
       if (storedJokes.length === 0) {
         console.log("No jokes in database, fetching a new one...");
-        
-        const response = await fetch("https://teehee.dev/api/joke");
-        const jokeData = await response.json();
-
-        if (jokeData && jokeData.question && jokeData.answer) {
-          result = new JokeModel({
-            question: jokeData.question,
-            answer: jokeData.answer,
-            votes: allowedEmojis.map((emoji) => ({ label: emoji, value: 0 })),
-          });
-
-          await result.save();
-        } else {
+        result = await generateJoke();
+        if (!result) {
           return res.status(404).json({ message: "No jokes found from API" });
         }
       } else {
@@ -48,21 +60,10 @@ jokesRouter.get("/:id?", async (req, res) => {
 
         if (availableJokes.length === 0) {
           console.log("All jokes have been used in this session. Fetching a new one...");
-          
           global.usedJokesIds = [];
 
-          const response = await fetch("https://teehee.dev/api/joke");
-          const jokeData = await response.json();
-
-          if (jokeData && jokeData.question && jokeData.answer) {
-            result = new JokeModel({
-              question: jokeData.question,
-              answer: jokeData.answer,
-              votes: allowedEmojis.map((emoji) => ({ label: emoji, value: 0 })),
-            });
-
-            await result.save();
-          } else {
+          result = await generateJoke();
+          if (!result) {
             return res.status(404).json({ message: "No new jokes available from API" });
           }
         } else {
@@ -80,10 +81,6 @@ jokesRouter.get("/:id?", async (req, res) => {
     res.status(500).json({ error: "Error fetching joke" });
   }
 });
-
-
-
-
 
 
 jokesRouter.post("/:id/vote", async (req, res) => {

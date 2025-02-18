@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 
-function Votes({ jokeId }) {
+function Votes({ jokeId, host }) {
     const [votes, setVotes] = useState([]);
     const [availableVotes, setAvailableVotes] = useState([]);
 
     useEffect(() => {
-        fetch(`http://localhost:5000/api/joke/${jokeId}`)
+        fetch(`${host}/api/joke/${jokeId}`)
             .then(response => response.json())
             .then(data => {
                 setVotes(data.votes || []);
@@ -15,7 +15,7 @@ function Votes({ jokeId }) {
     }, [jokeId]);
 
     const handleVote = (emoji) => {
-        fetch(`http://localhost:5000/api/joke/${jokeId}/vote`, {
+        fetch(`${host}/api/joke/${jokeId}/vote`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ selectedEmoji: emoji })
