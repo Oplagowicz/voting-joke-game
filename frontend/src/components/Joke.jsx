@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 
 function Joke({ joke }) {
     return (
-        <div>
-            <h2>{joke.question}</h2>
-            <p>{joke.answer}</p>
+        <div className="joke-container">
+            <h2 className="joke-question">{joke.question}</h2>
+            <p className="joke-answer">{joke.answer}</p>
         </div>
     );
 }

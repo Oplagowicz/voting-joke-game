@@ -26,7 +26,7 @@ function Votes({ jokeId, host }) {
     };
 
     return (
-        <div>
+        <div className="vote-buttons">
             {availableVotes.map((emoji) => {
                 const vote = votes.find(v => v.label === emoji) || { value: 0, label: emoji };
                 return (
